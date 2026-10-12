@@ -3,18 +3,38 @@
 A Claude Code slash command that saves where you left off, so the next session starts
 with the context it needs instead of a cold read of the repo.
 
-Type `/done` before you close a session. Claude will:
+Type `/done` before you close a session. It works on the current project (the git root, or
+the working directory if there isn't one) and splits what it saves across two files:
 
-1. **Update `CLAUDE.md`** in the project root (creating it if needed), which Claude Code
-   loads automatically next session:
-   - a dated **Session log** entry for what was built or changed
-   - a **Backlog / ideas** section, with finished items removed and new ones added
-   - any facts that changed: architecture, gotchas, URLs, versions
-2. **Sync persistent memory** with short pointer-level notes, leaving the detail in `CLAUDE.md`.
-3. **Flag unfinished work** under a **Resume here** heading, so the next session starts on it.
-4. **Reply with a short summary**: what was saved and the top item to pick up.
+- `CLAUDE.md` holds current state only. Claude Code loads it into every request, so it's
+  kept to about 10,000 characters, and every line in it should still be true next session.
+- `SESSION-LOG.md` holds history: dated session entries, finished work, backup names,
+  plans that got replaced. It isn't auto-loaded, so it can grow.
 
-It never commits or pushes. Saving the files is the whole job.
+What Claude does when you run it:
+
+1. Measures `CLAUDE.md`, and creates either file if it's missing.
+2. Adds a dated entry to the top of `SESSION-LOG.md`: what changed, files touched,
+   backups made, how it was verified, gotchas, and decisions you made.
+3. Rewrites the single `## Resume here` section in `CLAUDE.md` with the next 1–5 actions.
+   Anything half-done or broken goes first, along with temporary changes that need
+   undoing and anything waiting on someone else.
+4. Updates the other `CLAUDE.md` sections in place (key pointers, architecture, gotchas,
+   backlog). Finished backlog items come out and new ones go in as one-liners.
+5. Prunes `CLAUDE.md`. Finished or superseded detail moves verbatim to `SESSION-LOG.md`
+   under `## Archived notes`, with a pointer left behind. Nothing gets deleted outright.
+6. Syncs persistent memory, if the project has a memory directory, with pointer-level
+   facts only.
+7. Replies in six lines or fewer: what was saved, the `CLAUDE.md` size before and after
+   (in characters and rough tokens), and the top item to resume on.
+
+It never commits or pushes, and it doesn't touch other projects.
+
+You can pass a note, which ends up in the wrap-up:
+
+```
+/done left the migration half-done, tests not run
+```
 
 ## Install
 
@@ -37,8 +57,11 @@ At the end of a session:
 
 Next session, Claude reads `CLAUDE.md` on startup and picks up from **Resume here**.
 
-## Why
+## Why two files
 
-Long Claude Code sessions build up context that disappears when the window closes. Keeping
-the session log, the backlog and the next step in the one file Claude always reads means the
-next session starts where this one stopped.
+Long Claude Code sessions build up context that disappears when the window closes, so it
+has to be written down somewhere. But `CLAUDE.md` is sent with every request. If each
+session appends a log entry to it, the file grows until you're paying tokens on every
+prompt for notes from three weeks ago. Keeping only the current state there, and pushing
+history into a file Claude reads only when it needs to, keeps startup cheap without
+losing anything.
