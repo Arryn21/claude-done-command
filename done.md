@@ -3,46 +3,30 @@ description: End-of-session wrap-up for any project. Keeps CLAUDE.md small (curr
 argument-hint: "[optional notes, e.g. 'left X half-done']"
 ---
 
-The session is ending. Wrap up the **current project** (git root, else the working directory) so the next session
-starts fast and cheap. Extra notes from the user, if any: $ARGUMENTS
+Wrap up the current project (git root, else working directory). User notes: $ARGUMENTS
 
-Two files, two jobs:
-- `CLAUDE.md` (project root) is auto-loaded into EVERY request. It holds **current state only**. Budget: about
-  **10,000 characters**. Every line must still be true and useful next session.
-- `SESSION-LOG.md` (project root) is NOT auto-loaded. It holds history: dated session entries, finished work,
-  rollback/backup details, replaced plans. It can grow.
+- `CLAUDE.md` = auto-loaded every request: **current state only**, budget ~10,000 chars, every line true and useful.
+- `SESSION-LOG.md` = not auto-loaded: history, newest first (`## Entries`), archive at the end (`## Archived notes`).
+  Never Read it in full: `grep -n '^## '` for line numbers, Read only around the spot you edit.
+- Missing files: create them (SESSION-LOG with title, "not auto-loaded, newest first", `## Entries`).
 
-Steps:
-
-1. **Measure** `CLAUDE.md` (`wc -c`) and note the size. If it's missing, create it with the sections in step 4.
-   If `SESSION-LOG.md` is missing, create it with a title, a line saying it is not auto-loaded and is newest-first,
-   and a `## Entries` heading.
-
-2. **Session entry** at the top of `## Entries` in `SESSION-LOG.md` (newest first):
-   `- **YYYY-MM-DD (<where: local / server / both>):** what changed, files touched, backups made (names), what was
-   verified and how, gotchas learned, decisions the user made.` The detail goes here, not in CLAUDE.md.
-
-3. **Rewrite `## Resume here` in `CLAUDE.md`. Replace it; never add a second one.** Only: the next 1–5 concrete
-   actions, anything half-done or broken (first, in bold), anything TEMPORARY that must be undone and how, and what's
-   waiting on the user or someone else. Date in the heading. If nothing is pending, say so.
-
-4. **Update the other `CLAUDE.md` sections in place** (create missing ones; keep the project's own extra sections).
-   Typical layout: `## Resume here` · `## Key pointers` (commands, paths, URLs, where secrets live, never the secrets
-   themselves) · `## Architecture` · `## Gotchas` · `## Backlog / ideas`.
-   - Edit facts that changed (versions, hosts, URLs, file names). No dated "what I did today" paragraphs.
-   - Backlog: remove finished items, add new ones as one-liners.
-   - Gotchas: only ones that will bite again **in this project**. A technique useful across projects goes in
-     `~/.claude/skills/<category>/SKILL.md` instead (per the global CLAUDE.md skill-file rules).
-
-5. **Prune** (always check; required when over budget): move to `SESSION-LOG.md` under `## Archived notes`,
-   verbatim, anything finished, superseded, old as-built detail, per-change backup names, or long explanations a
-   pointer could replace. In `CLAUDE.md`, replace the detail with a pointer to the file that has it. Never delete
-   information outright; move it. Make sure `CLAUDE.md` mentions `SESSION-LOG.md` near the top.
-
-6. **Memory** (if this project has a memory directory): pointer-level facts only, one line per file in `MEMORY.md`.
-   Don't copy CLAUDE.md content. Fix or delete memories that are now wrong.
-
-7. Do **not** commit or push. Don't touch other projects.
-
-8. **Reply in ≤6 lines:** what was saved, `CLAUDE.md` size before → after (chars and ≈chars/4 tokens), and the top
-   item to resume on.
+1. `wc -c CLAUDE.md` (note size).
+2. **Log entry** at the top of `## Entries`: `- **YYYY-MM-DD (local / server / both):** what changed, files, backups
+   (names), what was verified and how, gotchas, user decisions.` If `CLAUDE.md` names another canonical log (e.g. a
+   server setup log), log server changes/backups there too.
+3. **Replace `## Resume here`** (one only, dated heading): half-done/broken items first in bold, next 1–5 numbered
+   actions, TEMPORARY changes and how to undo them, what waits on others. **Carry over every open item** from the old
+   one, links included; drop an item only if done and logged in step 2. Extra open items stay here as one-liners
+   (e.g. `Parked:`). Nothing pending → say so.
+4. **Other sections, targeted Edits** (no full rewrite): Key pointers (commands, paths, URLs, where secrets live,
+   never secrets) · Architecture · Gotchas · Backlog / ideas; keep the project's own sections. Fix changed facts, no
+   dated narratives. Backlog: drop finished, add one-liners. Gotchas: project-only; cross-project techniques go to
+   `~/.claude/skills/<category>/SKILL.md`.
+5. **Prune** only stale lines; full pass if over ~9,000 chars. Move (never delete) finished, superseded, as-built
+   detail, backup names, long explanations to the end of `## Archived notes`, verbatim but headings one level down
+   (`##`→`###`). Leave a pointer behind. Order: Backlog, Gotchas, Architecture, Key pointers detail. **Never prune
+   `## Resume here`**; if still over budget, say so. Keep the `SESSION-LOG.md` mention near the top of `CLAUDE.md`.
+6. **Memory** (if any): use the `MEMORY.md` index in context; open a memory only to change it. Pointer-level, no
+   CLAUDE.md copies; fix or delete wrong ones.
+7. No commit/push. Don't touch other projects.
+8. **Reply ≤6 lines:** what was saved, `CLAUDE.md` size before → after (chars, ≈/4 tokens), top resume item.
